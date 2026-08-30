@@ -100,13 +100,17 @@ Each of the 4 "সকল সেবা" icons redirects to a **separate external 
 - **Optimize app startup performance** : investigate whether slow loading is due to unnecessary network calls on launch, unoptimized assets, or backend latency.
 - **Consolidate services long-term:** the existing **ভূমি (Bhumi)** app appears to already attempt integrating mutation + tax + records : worth a direct comparison in a future version of this report.
 - **API-first backend design** so any single app can pull all land services through one unified interface instead of four separate portals.
-
-
-
-
-
-
-
+.
+.
+.
+.
+.
+.
+.
+.
+.
+.
+.
 # Gap Analysis: ভূমি (Bhumi) App — Beta Version Review
 ## Objective
 
@@ -200,3 +204,94 @@ Malformed banner and popup text (e.g. "THE MINISTRY OF LAND IS V 30 August 2026"
 - **Prioritize finishing the 5 non-functional core services** (Land Acquisition, Lease Management, Land ADM Mgmt, Land Revenue Case, Land Information Bank) before promoting the app further as a complete solution.
 - **Fix the malformed template strings** : indicates a need for a stronger QA/localization review step before release.
 - **Consider a phased public rollout:** hide or clearly gate not-yet-working tiles instead of shipping all 8 visibly, which currently makes ~62% of the home screen a dead end for users.
+.
+.
+.
+.
+.
+.
+.
+.
+.
+.
+.
+# Gap Analysis: ভূমি উন্নয়ন কর (Land Development Tax) App
+## Objective
+
+To evaluate the app's onboarding/authentication experience and document:
+- Session persistence issues
+- Identity verification burden on the user
+- Recommendations for improvement
+
+## App Details
+
+- **Full name:** ভূমি উন্নয়ন কর ব্যবস্থাপনা সিস্টেম (Land Development Tax Management System)
+- **Login options:** নাগরিক লগইন (Citizen Login) and সংস্থা লগইন (Organization Login)
+- **Language toggle:** English/Bengali (বাং) switch present on the welcome screen
+
+## Architecture / Infrastructure Description
+### Authentication & onboarding flow
+
+```mermaid
+flowchart TD
+    A[User Opens App] --> B[Welcome Screen]
+    B --> C{Login Type}
+    C -->|Citizen| D[নাগরিক লগইন]
+    C -->|Organization| E[সংস্থা লগইন]
+
+    D --> F[Login Form]
+    F --> F1[Mobile Number +880]
+    F --> F2[Password]
+    F --> F3[CAPTCHA - image text entry]
+    F1 & F2 & F3 --> G[লগইন করুন - Submit]
+
+    G --> H[Profile Data Verification Gate]
+    H --> I1[✅ Mobile Number - auto-verified]
+    H --> I2[⬜ NID - জাতীয় পরিচয়পত্র - manual verify]
+    H --> I3[⬜ Birth Registration - জন্ম নিবন্ধন - manual verify]
+    H --> I4[⬜ Passport - manual verify]
+
+    I1 & I2 & I3 & I4 --> J[Full Access to Tax Services]
+
+    style F3 fill:#fde2e2,stroke:#c0392b
+    style H fill:#fff3cd,stroke:#c99a2e
+    style I2 fill:#fde2e2,stroke:#c0392b
+    style I3 fill:#fde2e2,stroke:#c0392b
+    style I4 fill:#fde2e2,stroke:#c0392b
+```
+
+**Observed components:**
+
+- **Login layer:** Mobile number + password + a manually-typed CAPTCHA, required on **every** login . there is no persistent session, "remember me," biometric unlock, or refresh-token mechanism observed. Logging out means repeating the entire flow, CAPTCHA included, next time.
+- **Identity verification gate:** After login, before the app is usable, the user is asked to verify **four separate identifiers simultaneously**: mobile number (auto-verified from login), National ID (NID), Birth Registration, and Passport . each requiring a separate "যাচাই করুন" (Verify) action, likely against different government identity systems (NID database, birth registration database, passport database).
+- **No apparent fallback/partial-access path:** The screen frames this as required "to complete the ভূমি উন্নয়ন কর profile," suggesting a citizen without all four documents readily available/verifiable digitally could be blocked from progressing.
+
+## Findings — Gaps & Limitations
+
+### 1. No Persistent Session — Full Re-Login Required Every Time
+Once a user logs out, there is no lighter-weight way back in. Every session start requires re-entering the mobile number, password, and a freshly generated CAPTCHA. For a service citizens may need to check periodically (e.g. tax due dates, payment confirmations), this repeated friction discourages regular use and increases the chance of failed login attempts (mistyped CAPTCHA, forgotten password prompting resets).
+
+### 2. Four Simultaneous Identity Verifications Required
+To complete the profile, the user must verify **NID, Birth Registration, and Passport** all at once (mobile is auto-verified via login). This is a heavy burden:
+- Not every citizen holds a passport, so requiring it alongside NID and birth registration risks excluding a segment of legitimate taxpayers who only have one or two of these documents.
+- Presenting all four as needed **simultaneously**, rather than accepting any one valid national identifier, adds unnecessary friction to a process that fundamentally just needs to confirm "who is this taxpayer."
+- No visible explanation for *why* three separate document types are needed for a tax-payment app, which can come across as disproportionate data collection for the stated purpose.
+
+
+## Recommendations
+
+- **Introduce persistent sessions:** support "remember this device," refresh tokens, or biometric/PIN unlock so returning users aren't forced through full CAPTCHA-based login every time.
+- **Reduce CAPTCHA friction:** consider CAPTCHA only after repeated failed attempts (adaptive/risk-based) rather than on every single login.
+- **Make identity verification flexible, not simultaneous:** allow the user to complete their profile with **any one strong identifier** (NID is typically sufficient for Bangladeshi citizens) rather than requiring NID, Birth Registration, and Passport all at once. Reserve additional verification for edge cases (e.g. no NID available).
+- **Explain the "why":** a short note on why each document is requested (e.g. NID for identity, Passport only if NID unavailable) would reduce user confusion and hesitation around sharing sensitive documents.
+- **Allow partial/staged access:** let users view basic tax information before full identity verification is complete, reserving full verification for the payment step where it's actually necessary.
+.
+.
+.
+.
+.
+.
+.
+.
+.
+.
